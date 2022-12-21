@@ -44,6 +44,9 @@ void main()
 			if (!tabl_from_file(dannye_strela, dannye_name))
 			{
 				printf("Не удалось открыть файл!");
+				printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+				getchar();
+				getchar();
 				break;
 			};
 			// Вычисляем максимальную длину имени участника
