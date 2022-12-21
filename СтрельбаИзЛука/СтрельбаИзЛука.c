@@ -6,40 +6,48 @@
 #define COLUMN 72
 #define NAME_LEN_DEF 50
 
-void input_str_info(char* prompt, char* pstr); // ввод строкового значения
-void input_num_info(char* prompt, int* pnum); // ввод числового значения
-void ending(); // концовка
 int area_code_to_num(char, int); // числовое значение зоны мишени
 int col_strel(char dannye_strela[][COLUMN], int index); // возвращает сумму очков заданного участника
 int index_uchastnika(char dannye_name[][NAME_LEN_DEF]); // возвращает индекс заданного участника
 void output_dannye_uchastnika(int len, char name[], char dannye_strela[]); // выводит строку с данными участника
 void output_tabl(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF], int max_name_len); // выводит или всю таблицу или при отличной от нуля длине имени часть по спортсмену
-void search_winner(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // выводит имя и количество очков участника, набравшего наибольшее количество очков
-void search_set(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // выводит номер наилучшего сета и количество очков для заданного участника
-void zona(int ochki); // выводит наименование зоны мишени по очкам
-void mishen_vse(char dannye_strela[][COLUMN]); // выводит, в какую зону мишени участники попадали чаще всего
-void mishen_uchastnik(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // выводит, в какую зону мишени заданный участник попадал чаще всего
-void tabl_from_file(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // считывает данные из файла в массивы
+int search_winner(char dannye_strela[][COLUMN], int*); // определяет индекс участника, набравшего наибольшее количество очков
+int search_set(char dannye_strela[][COLUMN], int, int*); // определяет номер лучшего сета и количество очков для заданного участника
+char* zona(int ochki); // возвращает наименование зоны мишени по очкам
+char* mishen_vse(char dannye_strela[][COLUMN]); // выводит, в какую зону мишени участники попадали чаще всего
+char* mishen_uchastnik(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // выводит, в какую зону мишени заданный участник попадал чаще всего
+int tabl_from_file(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF]); // считывает данные из файла в массивы
 
 void main()
 {
 	system("chcp 1251");
 
-	int max_name_len = 0, name_len;
+	int max_name_len = 0, name_len, index = 0, max_ochki = 0, set = 0;
 	char dannye_strela[ROW][COLUMN];
 	char dannye_name[ROW][NAME_LEN_DEF];
+	char zona_str[NAME_LEN_DEF];
 
 	while (1)
 	{
 		int deystvie, deystvie_dop;
 		puts(" ______________________\n|                      |\n|   СТРЕЛЬБА ИЗ ЛУКА   |\n|______________________|");
-		input_num_info("\n    -###- Меню -###-\n\n  Выберите действие:\n1 - Выбрать файл\n2 - Отобразить таблицу\n3 - Поиск\n4 - Статистика попадания в мишени\n5 - Выход\n\n   > ", &deystvie);
+
+		printf("\n    -###- Меню -###-\n\n  Выберите действие:\n1 - Выбрать файл\n2 - Отобразить таблицу\n3 - Поиск\n4 - Статистика попадания в мишени\n5 - Выход\n\n   > ");
+		fseek(stdin, 0, SEEK_END);
+		scanf("%d", &deystvie);
+
 		if (deystvie == 5) break;
 
 		switch (deystvie)
 		{
 		case 1:
-			tabl_from_file(dannye_strela, dannye_name);
+			if (!tabl_from_file(dannye_strela, dannye_name))
+			{
+				printf("Не удалось открыть файл!");
+				break;
+			};
+			// Вычисляем максимальную длину имени участника
+			// Используется при выводе таблицы
 			for (int i = 0; i < ROW; i++)
 			{
 				name_len = strlen(dannye_name[i]);
@@ -47,7 +55,10 @@ void main()
 			}
 			break;
 		case 2:
-			input_num_info("\n-# Показывает считанные из файла данные #-\n\n1 - Таблица полностью\n2 - Для одного участника\n\n   > ", &deystvie_dop);
+			printf("\n-# Показывает считанные из файла данные #-\n\n1 - Таблица полностью\n2 - Для одного участника\n\n   > ");
+			fseek(stdin, 0, SEEK_END);
+			scanf("%d", &deystvie_dop);
+
 			switch (deystvie_dop)
 			{
 			case 1:
@@ -61,28 +72,54 @@ void main()
 			}
 			break;
 		case 3:
-			input_num_info("\n-# Поиск #-\n\n1 - Лучшего участника\n2 - Лучшего сета у участника\n\n   > ", &deystvie_dop);
+			printf("\n-# Поиск #-\n\n1 - Лучшего участника\n2 - Лучшего сета у участника\n\n   > ");
+			fseek(stdin, 0, SEEK_END);
+			scanf("%d", &deystvie_dop);
+
 			switch (deystvie_dop)
 			{
 			case 1:
-				search_winner(dannye_strela, dannye_name);
+				printf("\n");
+				printf("-# Выводит имя участника с наибольшим количеством очков #-\n\n   > ");
+				index = search_winner(dannye_strela, &max_ochki);
+				printf("%s", dannye_name[index]);
+				printf("\n");
+				printf("С результатом  > %d очков", max_ochki);
+				printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+				getchar();
+				getchar();
 				break;
 			case 2:
-				search_set(dannye_strela, dannye_name);
+				set = search_set(dannye_strela, index_uchastnika(dannye_name), &max_ochki);
+				printf("\nЛучший сет  > %d\nС результатом  > %d очков", set, max_ochki);
+				printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+				getchar();
+				getchar();
 				break;
 			default:
 				printf("!Ошибка!");
 			}
 			break;
 		case 4:
-			input_num_info("\n-# Выводит статистику попадания в зоны мишени #-\n\n1 - Для всех участников\n2 - Для одного участника\n\n   > ", &deystvie_dop);
+			printf("\n-# Выводит статистику попадания в зоны мишени #-\n\n1 - Для всех участников\n2 - Для одного участника\n\n   > ");
+			fseek(stdin, 0, SEEK_END);
+			scanf("%d", &deystvie_dop);
+
 			switch (deystvie_dop)
 			{
 			case 1:
-				mishen_vse(dannye_strela);
+				strcpy(zona_str, mishen_vse(dannye_strela));
+				printf("\n -# Наибольшее количество попаданий %s #-", zona_str);
+				printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+				getchar();
+				getchar();
 				break;
 			case 2:
-				mishen_uchastnik(dannye_strela, dannye_name);
+				strcpy(zona_str, mishen_uchastnik(dannye_strela, dannye_name));
+				printf("\n -# Наибольшее количество попаданий %s #-", zona_str);
+				printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+				getchar();
+				getchar();
 				break;
 			default:
 				printf("!Ошибка!");
@@ -93,28 +130,6 @@ void main()
 		}
 		system("cls");
 	}
-}
-
-void input_str_info(char* prompt, char* pstr)
-{
-	printf(prompt);
-	fseek(stdin, 0, SEEK_END);
-	scanf("%[^\n]s", pstr);
-}
-
-void input_num_info(char* prompt, int* pnum)
-{
-	printf(prompt);
-	fseek(stdin, 0, SEEK_END);
-	scanf("%d", pnum);
-
-}
-
-void ending()
-{
-	printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
-	getchar();
-	getchar();
 }
 
 int area_code_to_num(char area_code, int x_plus)
@@ -148,7 +163,11 @@ int col_strel(char dannye_strela[][COLUMN], int index)
 int index_uchastnika(char dannye_name[][NAME_LEN_DEF])
 {
 	char name[NAME_LEN_DEF];
-	input_str_info("\nВведите имя участника\n\n   > ", &name);
+
+	printf("\nВведите имя участника\n\n   > ");
+	fseek(stdin, 0, SEEK_END);
+	scanf("%[^\n]s", name);
+
 	int index = -1;
 	for (int i = 0; i < ROW; i++)
 	{
@@ -204,33 +223,30 @@ void output_tabl(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF],
 		for (int i = 0; i < ROW; i++)
 			output_dannye_uchastnika(len, dannye_name[i], dannye_strela[i]);
 
-	ending();
+	printf("\n\nВведите любой символ, чтобы продолжить\n\n   > ");
+	getchar();
+	getchar();
 }
 
-void search_winner(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
+int search_winner(char dannye_strela[][COLUMN], int* pmax)
 {
-	printf("\n");
-	printf("-# Выводит имя участника с наибольшим количеством очков #-\n\n   > ");
 	int index = 0;
-	int max = 0;
+	*pmax = 0;
 	for (int i = 0; i < ROW; i++)
 	{
-		if (max < col_strel(dannye_strela, i)) {
-			max = col_strel(dannye_strela, i);
+		if (*pmax < col_strel(dannye_strela, i)) {
+			*pmax = col_strel(dannye_strela, i);
 			index = i;
 		}
 	}
-	printf("%s", dannye_name[index]);
-	printf("\n");
-	printf("С результатом  > %d очков", max);
-	ending();
+
+	return index;
 }
 
-void search_set(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
+int search_set(char dannye_strela[][COLUMN], int index, int* pmax)
 {
-	int index;
-	index = index_uchastnika(dannye_name);
-	int  set = -1, max = 0;;
+	int set = -1;
+	*pmax = 0;
 	char znach;
 	for (int i = 0; i < COLUMN / 6; i++)
 	{
@@ -239,65 +255,68 @@ void search_set(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
 		{
 			znach = dannye_strela[index][j + i * 6];
 			sum += area_code_to_num(znach, 0);
-			if (max < sum)
+			if (*pmax < sum)
 			{
-				max = sum;
+				*pmax = sum;
 				set = 1 + i;
 			}
 		}
 	}
-	printf("\nЛучший сет  > %d\nС результатом  > %d очков", set, max);
-	ending();
+
+	return set;
 }
 
-void zona(int ochki)
+char* zona(int ochki)
 {
+	char rez[NAME_LEN_DEF];
+
 	switch (ochki)
 	{
 	case 0:
-		printf("- промахи");
+		strcpy(rez, "- промахи");
 		break;
 	case 1:
-		printf("в крайний белый");
+		strcpy(rez, "в крайний белый");
 		break;
 	case 2:
-		printf("в центральный белый");
+		strcpy(rez, "в центральный белый");
 		break;
 	case 3:
-		printf("в крайний чёрный");
+		strcpy(rez, "в крайний чёрный");
 		break;
 	case 4:
-		printf("в центральный чёрный");
+		strcpy(rez, "в центральный чёрный");
 		break;
 	case 5:
-		printf("в крайний голубой");
+		strcpy(rez, "в крайний голубой");
 		break;
 	case 6:
-		printf("в центральный голубой");
+		strcpy(rez, "в центральный голубой");
 		break;
 	case 7:
-		printf("в крайний красный");
+		strcpy(rez, "в крайний красный");
 		break;
 	case 8:
-		printf("в центральный красный");
+		strcpy(rez, "в центральный красный");
 		break;
 	case 9:
-		printf("в крайний золотой");
+		strcpy(rez, "в крайний золотой");
 		break;
 	case 10:
-		printf("в центральный золотой");
+		strcpy(rez, "в центральный золотой");
 		break;
 	case 11:
-		printf("в яблочко");
+		strcpy(rez, "в яблочко");
 		break;
 	default:
 		break;
 	}
+
+	return rez;
 }
 
-void mishen_vse(char dannye_strela[][COLUMN])
+char* mishen_vse(char dannye_strela[][COLUMN])
 {
-	printf("\n");
 	int kol[12] = { 0,0,0,0,0,0,0,0,0,0,0,0 };
 	for (int i = 0; i < ROW; i++)
 	{
@@ -315,13 +334,11 @@ void mishen_vse(char dannye_strela[][COLUMN])
 			ind_zona_max = i;
 		}
 	}
-	printf(" -# Наибольшее количество попаданий ");
-	zona(ind_zona_max);
-	printf(" #-");
-	ending();
+
+	return zona(ind_zona_max);
 }
 
-void mishen_uchastnik(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
+char* mishen_uchastnik(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
 {
 	int kol[12] = { 0,0,0,0,0,0,0,0,0,0,0,0 };
 	int index;
@@ -339,17 +356,19 @@ void mishen_uchastnik(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_
 			ind_zona_max = i;
 		}
 	}
-	printf("\n -# Наибольшее количество попаданий ");
-	zona(ind_zona_max);
-	printf(" #-");
-	ending();
+
+	return zona(ind_zona_max);
 }
 
-void tabl_from_file(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
+int tabl_from_file(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DEF])
 {
 	FILE* in;
 	char fname[NAME_LEN_DEF], buf[256];
-	input_str_info("\n-# Введите имя файла #-\n\n   > ", &fname);
+
+	printf("\n-# Введите имя файла #-\n\n   > ");
+	fseek(stdin, 0, SEEK_END);
+	scanf("%[^\n]s", fname);
+
 	in = fopen(fname, "rt");
 	if (in == NULL)
 	{
@@ -380,4 +399,6 @@ void tabl_from_file(char dannye_strela[][COLUMN], char dannye_name[][NAME_LEN_DE
 		i++;
 	}
 	fclose(in);
+
+	return 1;
 }
